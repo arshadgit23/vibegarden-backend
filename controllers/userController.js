@@ -7,6 +7,13 @@ const ToolVideoModel = require("../models/ToolVideoModel");
 const AvatarModel = require("../models/AvatarModel");
 const BloomModel = require("../models/BloomModel");
 const mongoose = require("mongoose");
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 exports.getAllUsers = async (req, res, next) => {
   try {
@@ -443,3 +450,27 @@ exports.favorites = async (req, res, next) => {
     next(err);
   }
 };
+
+const Notifications = {};
+
+io.on('connection', (socket) => {
+  console.log('A user connected');
+ 
+  // Assuming each user has a unique ID
+  const userId = socket.handshake.query.userId;
+ 
+  // Save the user's socket instance
+  Notifications[userId] = socket;
+ 
+  // Listen for a custom event to handle user actions
+  socket.on('userNotifications', (data) => {
+     console.log(`User action: ${data}`);
+     // You can broadcast or emit messages to other users here
+  });
+ 
+  socket.on('disconnect', () => {
+     console.log('A user disconnected');
+     // Remove the user from the Notifications object
+     delete Notifications[userId];
+  });
+ });
